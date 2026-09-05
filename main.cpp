@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <stdlib.h>
 #include <vector>
 
 // Obsługa FTXUI
@@ -147,7 +147,16 @@ unsigned int Reservation::nextAutoIncrementId = 1;
 unsigned int User::nextAutoIncrementId        = 1;
 unsigned int Resource::nextAutoIncrementId    = 1;
 
-void AdminPanel(){
+//Czyszczenie terminala 
+void clearScreen() {
+    #if defined(_WIN32) || defined(_WIN64)
+        std::system("cls");
+    #else
+        std::system("clear");
+    #endif
+}
+
+void AdminPanel(const User &admin, const Resource &res){
   int selected_option = 0;
   vector<string> options = {
     "[1] Lista wszystkich zasobow",
@@ -160,7 +169,7 @@ void AdminPanel(){
 
   auto screen = ScreenInteractive::TerminalOutput();
   auto admin_menu = Menu(&options, &selected_option);
-  string info_msg = "Zalogowano jako Administrator";
+  string info_msg = "Zalogowano jako " + admin.getFullNameUser();
   auto base_component = Container::Vertical({
     admin_menu,
     Button("Zatwierdź", [&] {
@@ -194,6 +203,7 @@ void AdminPanel(){
     }) | border;
   });
   screen.Loop(renderer);
+
 }
 
 void ClientPanel(){
@@ -259,9 +269,8 @@ int main() {
   });
 
   //glowna pentla programu
-  screen.Clear();
   while(true){
-      screen.Clear();
+    clearScreen();
       auto role_renderer = Renderer(role_component, [&] {
       return vbox({
                  text("=== SYSTEM REZERWACJI - WYBÓR ROLI ===") | bold | color(Color::Blue) | center,
@@ -272,15 +281,15 @@ int main() {
     screen.Loop(role_renderer);
 
     if(role_selection == 0){
-      screen.Clear();
+      clearScreen();
       ClientPanel();
     }
     else if(role_selection == 1){
-      screen.Clear();
-      AdminPanel();
+      clearScreen();
+      AdminPanel(users[0], resources[0]);
     }
     else{
-      //Wyjscie
+      clearScreen();
       return 0;
     }
 
