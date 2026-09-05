@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include <vector>
 
 // Obsługa FTXUI
@@ -160,7 +161,7 @@ void AdminPanel(){
   auto screen = ScreenInteractive::TerminalOutput();
   auto admin_menu = Menu(&options, &selected_option);
   string info_msg = "Zalogowano jako Administrator";
-  auto component = Container::Vertical({
+  auto base_component = Container::Vertical({
     admin_menu,
     Button("Zatwierdź", [&] {
       info_msg = "Wybrano: " + options[selected_option];
@@ -168,6 +169,17 @@ void AdminPanel(){
     Button("Wróć", [&] {
       screen.Exit();
     })
+  });
+  auto component = CatchEvent(base_component, [&](Event event) {
+    if (event == Event::Escape) {
+      screen.Exit();
+      return true;
+    }
+    if (event == Event::Return) {
+      info_msg = "Wybrano: " + options[selected_option];
+      return true;
+    }
+    return false;
   });
 
   auto renderer = Renderer(component, [&] {
@@ -186,13 +198,20 @@ void AdminPanel(){
 
 void ClientPanel(){
   auto screen = ScreenInteractive::TerminalOutput();
-  auto component = Container::Vertical({
+  auto base_component = Container::Vertical({
     Button("Utwórz rezerwację", [&] {
       screen.Exit();
     }),
     Button("Wróć", [&] {
       screen.Exit();
     })
+  });
+  auto component = CatchEvent(base_component, [&](Event event) {
+    if (event == Event::Escape) {
+      screen.Exit();
+      return true;
+    }
+    return false;
   });
   auto renderer = Renderer(component, [&] {
     return vbox({
@@ -231,9 +250,18 @@ int main() {
         screen.Exit(); // Zamknij ekran wyboru ról i przejdź do akcji
       })
   });
+  role_component = CatchEvent(role_component, [&](Event event) {
+    if (event == Event::Return) {
+      screen.Exit();
+      return true;
+    }
+    return false;
+  });
 
   //glowna pentla programu
+  screen.Clear();
   while(true){
+      screen.Clear();
       auto role_renderer = Renderer(role_component, [&] {
       return vbox({
                  text("=== SYSTEM REZERWACJI - WYBÓR ROLI ===") | bold | color(Color::Blue) | center,
@@ -244,9 +272,11 @@ int main() {
     screen.Loop(role_renderer);
 
     if(role_selection == 0){
+      screen.Clear();
       ClientPanel();
     }
     else if(role_selection == 1){
+      screen.Clear();
       AdminPanel();
     }
     else{
