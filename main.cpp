@@ -156,7 +156,9 @@ void clearScreen() {
     #endif
 }
 
-void AdminPanel(const User &admin, const Resource &res){
+void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive = false){}
+
+void AdminPanel(const User &admin, const vector<Resource> &resources) {
   int selected_option = 0;
   vector<string> options = {
     "[1] Lista wszystkich zasobow",
@@ -167,81 +169,41 @@ void AdminPanel(const User &admin, const Resource &res){
     "[6] Wszyscy uzytkownicy"
   };
 
-  auto screen = ScreenInteractive::TerminalOutput();
   auto admin_menu = Menu(&options, &selected_option);
-  string info_msg = "Zalogowano jako " + admin.getFullNameUser();
-  auto base_component = Container::Vertical({
-    admin_menu,
-    Button("Zatwierdź", [&] {
-      info_msg = "Wybrano: " + options[selected_option];
-    }),
-    Button("Wróć", [&] {
-      screen.Exit();
-    })
-  });
-  auto component = CatchEvent(base_component, [&](Event event) {
-    if (event == Event::Escape) {
-      screen.Exit();
-      return true;
-    }
-    if (event == Event::Return) {
-      info_msg = "Wybrano: " + options[selected_option];
-      return true;
-    }
-    return false;
-  });
-
-  auto renderer = Renderer(component, [&] {
-    return vbox({
-      text("=== PANEL ADMINISTRATORA ===") | bold | color(Color::Blue) | center,
-      separator(),
-      admin_menu->Render() | border,
-      separator(),
-      text(info_msg),
-      separator(),
-      text("Wybierz opcję strzałkami, zatwierdź Enterem") | dim,
-    }) | border;
-  });
-  screen.Loop(renderer);
-
-}
-
-void ClientPanel(){
   auto screen = ScreenInteractive::TerminalOutput();
-  auto base_component = Container::Vertical({
-    Button("Utwórz rezerwację", [&] {
-      screen.Exit();
-    }),
-    Button("Wróć", [&] {
+
+  auto admin_component = Container::Vertical({
+    admin_menu,
+    Button("Wybierz opcje", [&]{
       screen.Exit();
     })
   });
-  auto component = CatchEvent(base_component, [&](Event event) {
-    if (event == Event::Escape) {
+  admin_component = CatchEvent(admin_component, [&](Event event){
+    if(event == Event::Return){
       screen.Exit();
       return true;
     }
     return false;
   });
-  auto renderer = Renderer(component, [&] {
-    return vbox({
-      text("=== PANEL KLIENTA ===") | bold | color(Color::Blue) | center,
-      separator(),
-      text("Panel rezerwacji jest gotowy do rozbudowy."),
-      separator(),
-      text("Użyj Enter, aby wybrać przycisk.") | dim,
-    }) | border;
-  });
-  screen.Loop(renderer);
+  while(true){
+    clearScreen();
+    auto admin_renderer = Renderer(admin_component, [&]{
+      return vbox({
+        text("=== Panel Administratora ===") | bold | color(Color::Blue) | center,
+        separator(),
+        admin_menu->Render() | border,
+      }) | border;
+    });
+    screen.Loop(admin_renderer);
+  }
 }
-
 
 int main() {
   vector<User> users;
-                 users.push_back(User("Admin",        "+48 111 222 333", Role::ADMIN));
-                 users.push_back(User("KlientTest",   "+48 999 888 777", Role::CLIENT));
+                users.push_back(User("Admin",        "+48 111 222 333", Role::ADMIN));
+                users.push_back(User("KlientTest",   "+48 999 888 777", Role::CLIENT));
   vector<Resource> resources;
-                     resources.push_back(Resource("Sala Konferencyjna A", 20, 50.0));
+                   resources.push_back(Resource("Sala Konferencyjna A", 20, 50.0));
   vector<Reservation> reservations;
 
   int role_selection = 0;
@@ -281,12 +243,10 @@ int main() {
     screen.Loop(role_renderer);
 
     if(role_selection == 0){
-      clearScreen();
-      ClientPanel();
     }
     else if(role_selection == 1){
       clearScreen();
-      AdminPanel(users[0], resources[0]);
+      AdminPanel(users[0], resources);
     }
     else{
       clearScreen();
