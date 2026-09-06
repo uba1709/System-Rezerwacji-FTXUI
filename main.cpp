@@ -156,10 +156,57 @@ void clearScreen() {
     #endif
 }
 
-void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive = false){}
+void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive = false){
+  auto screen = ScreenInteractive::TerminalOutput();
+  vector<vector<string>> table_data = {
+    {"ID", "Nazwa zasobu", "Pojemnosc", "Cena/godz.", "Status"}
+  };
+
+  for(const auto& res : resources){
+    if(isActive && !res.getIsActive())
+        continue;
+
+    string capStr = to_string(res.getCapacity()) + " os.";
+    table_data.push_back({
+      to_string(res.getIdResource()),
+      res.getNameResource(),
+      capStr,
+      to_string(static_cast<int>(res.getPricePerSlot())) + " PLN",
+      res.getIsActive() ? "Dostepny" : "Niedostepny"
+    });
+  }
+
+  auto table = Table(table_data);
+  table.SelectRow(0).Decorate(bold | color(Color::Blue));
+  table.SelectRow(0).SeparatorHorizontal(Light);
+
+  auto component = Renderer([&] {
+    return vbox({
+      text("=== Lista zasobow i cena ===") | bold | color(Color::Blue) | center,
+      separator(),
+      table.Render() | border,
+    }) | border;
+  });
+
+  component = CatchEvent(component, [&](Event event){
+    if(event == Event::Escape){
+      screen.Exit();
+      return true;
+    }
+    if(event == Event::Return){
+      screen.Exit();
+      return true;
+    }
+    return false;
+  });
+
+  clearScreen();
+  screen.Loop(component);
+}
 
 void AdminPanel(const User &admin, const vector<Resource> &resources) {
   int selected_option = 0;
+  bool leave_panel = false;
   vector<string> options = {
     "[1] Lista wszystkich zasobow",
     "[2] Dodaj nowy zasob",
@@ -175,26 +222,43 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
   auto admin_component = Container::Vertical({
     admin_menu,
     Button("Wybierz opcje", [&]{
+      leave_panel = true;
       screen.Exit();
     })
   });
   admin_component = CatchEvent(admin_component, [&](Event event){
+    if(event == Event::Escape){
+      leave_panel = true;
+      screen.Exit();
+      return true;
+    }
+    if(event == Event::Character("1")){
+      selected_option = 0;
+      screen.Exit();
+      return true;
+    }
     if(event == Event::Return){
+      leave_panel = true;
       screen.Exit();
       return true;
     }
     return false;
   });
-  while(true){
+  auto admin_renderer = Renderer(admin_component, [&]{
+    return vbox({
+      text("=== Panel Administratora ===") | bold | color(Color::Blue) | center,
+      separator(),
+      admin_menu->Render() | border,
+    }) | border;
+  });
+
+  while(!leave_panel){
     clearScreen();
-    auto admin_renderer = Renderer(admin_component, [&]{
-      return vbox({
-        text("=== Panel Administratora ===") | bold | color(Color::Blue) | center,
-        separator(),
-        admin_menu->Render() | border,
-      }) | border;
-    });
     screen.Loop(admin_renderer);
+
+    if(!leave_panel && selected_option == 0){
+      displayResourcesAndPricing(resources, false);
+    }
   }
 }
 
@@ -252,6 +316,5 @@ int main() {
       clearScreen();
       return 0;
     }
-
   }
 }
