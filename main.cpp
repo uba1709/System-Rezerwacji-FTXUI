@@ -7,6 +7,7 @@
 #include "ftxui/component/component.hpp"
 #include "ftxui/component/screen_interactive.hpp"
 #include "ftxui/dom/elements.hpp"
+#include "ftxui/dom/table.hpp"
 using namespace ftxui;
 using namespace std;
 
@@ -177,14 +178,15 @@ void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive
   }
 
   auto table = Table(table_data);
+  table.SelectAll().Border(LIGHT);
   table.SelectRow(0).Decorate(bold | color(Color::Blue));
-  table.SelectRow(0).SeparatorHorizontal(Light);
+  table.SelectRow(0).SeparatorHorizontal(LIGHT);
 
   auto component = Renderer([&] {
     return vbox({
       text("=== Lista zasobow i cena ===") | bold | color(Color::Blue) | center,
       separator(),
-      table.Render() | border,
+      table.Render(),
     }) | border;
   });
 
@@ -207,6 +209,7 @@ void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive
 void AdminPanel(const User &admin, const vector<Resource> &resources) {
   int selected_option = 0;
   bool leave_panel = false;
+  bool select_option = false;
   vector<string> options = {
     "[1] Lista wszystkich zasobow",
     "[2] Dodaj nowy zasob",
@@ -222,7 +225,7 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
   auto admin_component = Container::Vertical({
     admin_menu,
     Button("Wybierz opcje", [&]{
-      leave_panel = true;
+      select_option = true;
       screen.Exit();
     })
   });
@@ -234,11 +237,12 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
     }
     if(event == Event::Character("1")){
       selected_option = 0;
+      select_option = true;
       screen.Exit();
       return true;
     }
     if(event == Event::Return){
-      leave_panel = true;
+      select_option = true;
       screen.Exit();
       return true;
     }
@@ -256,7 +260,8 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
     clearScreen();
     screen.Loop(admin_renderer);
 
-    if(!leave_panel && selected_option == 0){
+    if(!leave_panel && select_option && selected_option == 0){
+      select_option = false;
       displayResourcesAndPricing(resources, false);
     }
   }
@@ -264,8 +269,8 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
 
 int main() {
   vector<User> users;
-                users.push_back(User("Admin",        "+48 111 222 333", Role::ADMIN));
-                users.push_back(User("KlientTest",   "+48 999 888 777", Role::CLIENT));
+               users.push_back(User("Admin",        "+48 111 222 333", Role::ADMIN));
+               users.push_back(User("KlientTest",   "+48 999 888 777", Role::CLIENT));
   vector<Resource> resources;
                    resources.push_back(Resource("Sala Konferencyjna A", 20, 50.0));
   vector<Reservation> reservations;
