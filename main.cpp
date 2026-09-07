@@ -178,24 +178,20 @@ void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive
   }
 
   auto table = Table(table_data);
-  table.SelectAll().Border(LIGHT);
-  table.SelectRow(0).Decorate(bold | color(Color::Blue));
+  table.SelectAll().Decorate(center);
+  table.SelectRow(0).Decorate(bold | color(Color::Blue) | size(WIDTH, GREATER_THAN, 15) | size(WIDTH, LESS_THAN, 50));
   table.SelectRow(0).SeparatorHorizontal(LIGHT);
 
   auto component = Renderer([&] {
     return vbox({
       text("=== Lista zasobow i cena ===") | bold | color(Color::Blue) | center,
       separator(),
-      table.Render(),
+      table.Render() | center | borderRounded,
     }) | border;
   });
 
   component = CatchEvent(component, [&](Event event){
     if(event == Event::Escape){
-      screen.Exit();
-      return true;
-    }
-    if(event == Event::Return){
       screen.Exit();
       return true;
     }
@@ -206,7 +202,30 @@ void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive
   screen.Loop(component);
 }
 
-void AdminPanel(const User &admin, const vector<Resource> &resources) {
+void addNewResourcesAndPricing(vector<Resource>& resources){
+
+  component = CatchEvent(component, [&](Event event){
+    if(event == Event::Escape){
+      screen.Exit();
+      return true;
+    }
+    return false;
+  });
+
+  auto component = Renderer([&] {
+  return vbox({
+      text("=== Lista zasobow i cena ===") | bold | color(Color::Blue) | center,
+      separator(),
+    }) | border;
+  });
+
+
+
+  clearScreen();
+  screen.Loop(component);
+}
+
+void AdminPanel(const User &admin, vector<Resource> &resources) {
   int selected_option = 0;
   bool leave_panel = false;
   bool select_option = false;
@@ -241,6 +260,12 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
       screen.Exit();
       return true;
     }
+    if(event == Event::Character("2")){
+      selected_option = 1;
+      select_option = true;
+      screen.Exit();
+      return true;
+    }
     if(event == Event::Return){
       select_option = true;
       screen.Exit();
@@ -264,6 +289,10 @@ void AdminPanel(const User &admin, const vector<Resource> &resources) {
       select_option = false;
       displayResourcesAndPricing(resources, false);
     }
+    else if(!leave_panel && select_option && selected_option == 1){
+      select_option = false;
+      addNewResourcesAndPricing(resources);
+    }
   }
 }
 
@@ -273,6 +302,7 @@ int main() {
                users.push_back(User("KlientTest",   "+48 999 888 777", Role::CLIENT));
   vector<Resource> resources;
                    resources.push_back(Resource("Sala Konferencyjna A", 20, 50.0));
+                   resources.push_back(Resource("Sala Konferencyjna B", 90, 290.0));
   vector<Reservation> reservations;
 
   int role_selection = 0;
