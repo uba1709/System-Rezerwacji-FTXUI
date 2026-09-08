@@ -203,26 +203,9 @@ void displayResourcesAndPricing(const vector<Resource>& resources, bool isActive
 }
 
 void addNewResourcesAndPricing(vector<Resource>& resources){
+  auto screen = ScreenInteractive::TerminalOutput(); 
+  
 
-  component = CatchEvent(component, [&](Event event){
-    if(event == Event::Escape){
-      screen.Exit();
-      return true;
-    }
-    return false;
-  });
-
-  auto component = Renderer([&] {
-  return vbox({
-      text("=== Lista zasobow i cena ===") | bold | color(Color::Blue) | center,
-      separator(),
-    }) | border;
-  });
-
-
-
-  clearScreen();
-  screen.Loop(component);
 }
 
 void AdminPanel(const User &admin, vector<Resource> &resources) {
